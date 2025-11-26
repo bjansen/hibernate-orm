@@ -4,8 +4,10 @@
  */
 package org.hibernate.boot.model.source.internal.hbm;
 
+import java.util.EnumSet;
 import java.util.Set;
 
+import jakarta.persistence.CascadeType;
 import org.hibernate.boot.jaxb.Origin;
 import org.hibernate.boot.jaxb.hbm.spi.EntityInfo;
 import org.hibernate.boot.jaxb.hbm.spi.JaxbHbmHibernateMapping;
@@ -64,7 +66,7 @@ public class MappingDocument implements HbmLocalMetadataBuildingContext, Metadat
 						.setImplicitCatalogName( documentRoot.getCatalog() )
 						.setImplicitPackageName( documentRoot.getPackage() )
 						.setImplicitPropertyAccessorName( documentRoot.getDefaultAccess() )
-//						.setImplicitCascadeStyleName( documentRoot.getDefaultCascade() )
+						.setImplicitCascadeTypes( getCascadeTypes(documentRoot) )
 						.setEntitiesImplicitlyLazy( documentRoot.isDefaultLazy() )
 						.setAutoImportEnabled( documentRoot.isAutoImport() )
 						.setPluralAttributesImplicitlyLazy( documentRoot.isDefaultLazy() )
@@ -74,6 +76,18 @@ public class MappingDocument implements HbmLocalMetadataBuildingContext, Metadat
 
 		typeDefinitionRegistry =
 				new TypeDefinitionRegistryStandardImpl( rootBuildingContext.getTypeDefinitionRegistry() );
+	}
+
+	private EnumSet<CascadeType> getCascadeTypes(JaxbHbmHibernateMapping documentRoot) {
+		return switch ( documentRoot.getDefaultCascade() ) {
+			case "all" -> EnumSet.of( CascadeType.ALL );
+			case "persist" -> EnumSet.of( CascadeType.PERSIST );
+			case "merge" -> EnumSet.of( CascadeType.MERGE );
+			case "refresh" -> EnumSet.of( CascadeType.REFRESH );
+			case "evict" -> EnumSet.of( CascadeType.DETACH );
+			case "delete", "remove" -> EnumSet.of( CascadeType.REMOVE );
+			default -> null;
+		};
 	}
 
 	public JaxbHbmHibernateMapping getDocumentRoot() {
